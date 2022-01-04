@@ -18,6 +18,6 @@ void delay_ms(uint32_t ms)
 {
     uint32_t val = tick + ms;
     while (((int)val - (int)tick) >= 0) {
-        //        sched_yield();
+        sched_yield();
     };
 }
