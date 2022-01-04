@@ -1,5 +1,6 @@
 #include "delay.h"
 
+#include "coop_sched.h"
 #include "stm32l433xx.h"
 
 static volatile uint32_t tick = 0;
