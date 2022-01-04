@@ -1,0 +1,3 @@
+[submodule "coop-sched"]
+	path = coop-sched
+	url = git@github.com:patrislav1/coop-sched.git

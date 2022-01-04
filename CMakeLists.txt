@@ -7,9 +7,9 @@ include(cmake/cubemx.cmake)
 
 project(${CMX_PROJ})
 
-add_executable(${CMX_PROJ} app/app.c app/ringbuf.c app/uart.c)
+add_executable(${CMX_PROJ} app/app.c app/ringbuf.c app/uart.c coop-sched/coop_sched.c)
 
 cubemx_target(${CMX_PROJ})
 target_compile_options(${CMX_PROJ} PRIVATE -Og -Wall -g -gdwarf-2)
-target_include_directories(${CMX_PROJ} PUBLIC "${CMAKE_CURRENT_LIST_DIR}/app")
+target_include_directories(${CMX_PROJ} PUBLIC "${CMAKE_CURRENT_LIST_DIR}/app" "${CMAKE_CURRENT_LIST_DIR}/coop-sched")
 target_compile_definitions(${CMX_PROJ} PRIVATE USE_FULL_LL_DRIVER)
