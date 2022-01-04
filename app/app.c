@@ -1,6 +1,7 @@
 #include "app.h"
 
 #include <stdio.h>
+#include <unistd.h>
 
 #include "coop_sched.h"
 #include "delay.h"
@@ -41,7 +42,9 @@ void app_main(void)
     sched_create_task(&mytask2, test_task_2, NULL, mystack2, sizeof(mystack2));
 
     while (1) {
-        printf("Main Loop.\r\n");
-        delay_ms(1000);
+        char c;
+        if (read(STDIN_FILENO, &c, sizeof(c)) == sizeof(c)) {
+            printf("received: %c\r\n", c);
+        }
     }
 }
