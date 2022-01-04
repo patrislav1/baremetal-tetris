@@ -1,0 +1,29 @@
+---
+BasedOnStyle: Chromium
+
+IndentWidth: 4
+
+IncludeCategories:
+  - Regex:           '<[a-zA-Z0-9_]+>' # standard headers (no extension)
+    Priority:        2
+  - Regex:           '<[a-zA-Z0-9/]+\.(h|hpp)>' # library headers (with extension)
+    Priority:        3
+  - Regex:           '".*"'
+    Priority:        4
+
+IncludeBlocks: Regroup
+
+AlwaysBreakAfterDefinitionReturnType: None
+AlwaysBreakAfterReturnType: None
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+
+BinPackArguments: false
+BinPackParameters: false
+ExperimentalAutoDetectBinPacking: false
+AllowAllParametersOfDeclarationOnNextLine: false
+BreakBeforeBraces: WebKit
+BreakConstructorInitializers: BeforeComma
+
+ReflowComments: false
+ColumnLimit: 100
