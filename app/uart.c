@@ -13,6 +13,20 @@ static char tx_buf[512];
 static ringbuf_t rx_rb = RINGBUF_INIT(rx_buf);
 static ringbuf_t tx_rb = RINGBUF_INIT(tx_buf);
 
+void panic_print(const char* str)
+{
+    LL_USART_DisableIT_TC(CONSOLE_UART);
+    LL_USART_DisableIT_TXE(CONSOLE_UART);
+    LL_USART_DisableIT_RXNE(CONSOLE_UART);
+    LL_USART_DisableIT_ERROR(CONSOLE_UART);
+
+    while (*str) {
+        while (!LL_USART_IsActiveFlag_TXE(CONSOLE_UART)) {
+        };
+        LL_USART_TransmitData8(CONSOLE_UART, *str++);
+    }
+}
+
 void USART2_IRQHandler(void)
 {
     USART_TypeDef* const uart = CONSOLE_UART;
