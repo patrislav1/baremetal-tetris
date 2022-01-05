@@ -4,9 +4,10 @@
 #include <unistd.h>
 
 #include "coop_sched.h"
-#include "delay.h"
 #include "gpio.h"
-#include "uart.h"
+#include "util/delay.h"
+#include "util/minicurses.h"
+#include "util/uart.h"
 
 static void led_test_fn(void* arg)
 {
@@ -22,7 +23,7 @@ static void fp_test_fn(void* arg)
 {
     static float f = 0.f;
     while (f < 10.f) {
-        printf("Value: %g\r\n", f);
+        //        printf("Value: %g\r\n", f);
         f += 0.1f;
         // delay_ms() will implicitly call sched_yield()
         delay_ms(110);
@@ -39,6 +40,60 @@ static struct {
     {"FP", fp_test_fn},
 };
 
+static void mc_test(void)
+{
+    mc_initscr();
+    mc_setcursor(false);
+    const char* tmp = "Test";
+    mc_color_t fg = mc_color_white;
+    mc_color_t bg = mc_color_black;
+    mc_attr_t attr = mc_attr_normal;
+    bool quit = false;
+    int x = 0, y = 0;
+    while (!quit) {
+        mc_move(x, y);
+        mc_set_fg(fg);
+        mc_set_bg(bg);
+        mc_setattr(attr);
+        mc_putch(mc_sym_hline);
+        mc_putstr(tmp);
+        mc_putch(mc_sym_hline);
+        int c = mc_getch();
+        switch (c) {
+            case key_up:
+                y--;
+                break;
+            case key_down:
+                y++;
+                break;
+            case key_left:
+                x--;
+                break;
+            case key_right:
+                x++;
+                break;
+            case 'f':
+                fg += 1;
+                fg %= 8;
+                break;
+            case 'b':
+                bg += 1;
+                bg %= 8;
+                break;
+            case 'q':
+                quit = true;
+                break;
+            case 'a':
+                attr ^= mc_attr_blink | mc_attr_italic;
+                break;
+            default:
+                break;
+        }
+    }
+    mc_exitscr();
+    mc_clear();
+}
+
 void app_main(void)
 {
     uart_init();
@@ -54,6 +109,7 @@ void app_main(void)
                           sizeof(tasks[k].stack));
     }
 
+    mc_test();
     while (1) {
         char c;
         // read() will implicitly call sched_yield()
