@@ -2,8 +2,8 @@
 
 #include <stdint.h>
 
-#define SCREEN_SIZE_X 20
-#define SCREEN_SIZE_Y 40
+#define SCREEN_SIZE_X 18
+#define SCREEN_SIZE_Y 30
 #define MAP_SIZE_X (SCREEN_SIZE_X - 2)
 #define MAP_SIZE_Y (SCREEN_SIZE_Y - 2)
 

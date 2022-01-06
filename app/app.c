@@ -6,10 +6,12 @@
 
 #include "coop_sched.h"
 #include "game/output.h"
+#include "game/piece.h"
 #include "gpio.h"
 #include "macros.h"
 #include "util/delay.h"
 #include "util/minicurses.h"
+#include "util/prng.h"
 #include "util/uart.h"
 
 static void led_test_fn(void* arg)
@@ -22,14 +24,38 @@ static void led_test_fn(void* arg)
     }
 }
 
-static void fp_test_fn(void* arg)
+static enum {
+    cmd_none,
+    cmd_left,
+    cmd_right,
+    cmd_rotate,
+    cmd_down,
+    cmd_drop,
+} game_cmd = cmd_none;
+
+static void input_task(void* arg)
 {
-    static float f = 0.f;
-    while (f < 10.f) {
-        //        printf("Value: %g\r\n", f);
-        f += 0.1f;
-        // delay_ms() will implicitly call sched_yield()
-        delay_ms(110);
+    while (1) {
+        int c = mc_getch();
+        switch (c) {
+            case key_up:
+                game_cmd = cmd_rotate;
+                break;
+            case key_down:
+                game_cmd = cmd_down;
+                break;
+            case key_left:
+                game_cmd = cmd_left;
+                break;
+            case key_right:
+                game_cmd = cmd_right;
+                break;
+            case ' ':
+                game_cmd = cmd_drop;
+                break;
+            default:
+                break;
+        }
     }
 }
 
@@ -40,70 +66,84 @@ static struct {
     uint8_t stack[1000];
 } tasks[] = {
     {"LED", led_test_fn},
-    {"FP", fp_test_fn},
+    {"input", input_task},
 };
 
-static game_map_t screen = {0};
+static game_map_t screen = {0}, screen_current;
 
 static void mc_test(void)
 {
     mc_initscr();
     mc_setcursor(false);
     output_init();
-    const char* tmp = "Test";
-    mc_color_t fg = mc_color_white;
-    mc_color_t bg = mc_color_black;
-    mc_attr_t attr = mc_attr_normal;
-    bool quit = false;
-    coord_t x = 0, y = 0;
-    while (!quit) {
-#if 0
-        mc_move(x, y);
-        mc_set_fg(fg);
-        mc_set_bg(bg);
-        mc_setattr(attr);
-        mc_putch(mc_sym_hline);
-        mc_putstr(tmp);
-        mc_putch(mc_sym_hline);
-#endif
-        screen.block[y][x] = fg;
-        output_render(&screen);
-        int c = mc_getch();
-        switch (c) {
-            case key_up:
-                y--;
-                y = BOUND(y, 0, MAP_SIZE_Y - 1);
+    enum { piece_new, piece_falling, piece_landed } state = piece_new;
+    piece_t piece;
+    timeout_t to;
+    uint16_t interval_ms = 250;
+    while (1) {
+        switch (state) {
+            case piece_new:
+                piece = piece_get_random();
+                pos_t pos = {
+                    .x = MAP_SIZE_X / 2 - 1,
+                    .y = -piece_get_max_dy(&piece) - 1,
+                };
+                state = piece_falling;
+                timeout_set(&to, interval_ms);
+            case piece_falling:
+                if (timeout_elapsed(&to)) {
+                    timeout_set(&to, interval_ms);
+                    if (piece_collision(&piece, (pos_t){pos.x, pos.y + 1}, &screen)) {
+                        state = piece_landed;
+                        break;
+                    }
+                    pos.y++;
+                }
+                switch (game_cmd) {
+                    pos_t pos_new;
+                    case cmd_rotate:
+                        piece_rotate(&piece);
+                        break;
+                    case cmd_left:
+                        pos_new = (pos_t){pos.x - 1, pos.y};
+                        if (!piece_collision(&piece, pos_new, &screen)) {
+                            pos = pos_new;
+                        }
+                        break;
+                    case cmd_right:
+                        pos_new = (pos_t){pos.x + 1, pos.y};
+                        if (!piece_collision(&piece, pos_new, &screen)) {
+                            pos = pos_new;
+                        }
+                        break;
+                    case cmd_down:
+                        pos_new = (pos_t){pos.x, pos.y + 1};
+                        if (!piece_collision(&piece, pos_new, &screen)) {
+                            pos = pos_new;
+                        }
+                        break;
+                    case cmd_drop:
+                        pos_new = pos;
+                        while (!piece_collision(&piece, pos_new, &screen)) {
+                            pos = pos_new;
+                            pos_new = (pos_t){pos_new.x, pos_new.y + 1};
+                        }
+                        break;
+                    default:
+                        break;
+                }
+                game_cmd = cmd_none;
+                screen_current = screen;
+                piece_draw(&piece, pos, &screen_current);
+                output_render(&screen_current);
                 break;
-            case key_down:
-                y++;
-                y = BOUND(y, 0, MAP_SIZE_Y - 1);
-                break;
-            case key_left:
-                x--;
-                x = BOUND(x, 0, MAP_SIZE_X - 1);
-                break;
-            case key_right:
-                x++;
-                x = BOUND(x, 0, MAP_SIZE_X - 1);
-                break;
-            case 'f':
-                fg += 1;
-                fg %= 8;
-                break;
-            case 'b':
-                bg += 1;
-                bg %= 8;
-                break;
-            case 'q':
-                quit = true;
-                break;
-            case 'a':
-                memset(&screen, 0, sizeof(screen));
-                //                attr ^= mc_attr_blink | mc_attr_italic;
-                break;
-            default:
+            case piece_landed:
+                piece_draw(&piece, pos, &screen);
+                screen = screen_current;
+                state = piece_new;
                 break;
         }
+        sched_yield();
     }
     mc_exitscr();
     mc_clear();
@@ -122,6 +162,11 @@ void app_main(void)
                           NULL,
                           tasks[k].stack,
                           sizeof(tasks[k].stack));
+    }
+
+    prng_seed(get_ms() ^ SysTick->VAL);
+    for (int i = 0; i < SysTick->VAL % 2000; i++) {
+        prng_next();
     }
 
     mc_test();

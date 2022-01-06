@@ -22,3 +22,18 @@ void delay_ms(uint32_t ms)
         sched_yield();
     };
 }
+
+uint32_t get_ms(void)
+{
+    return tick;
+}
+
+void timeout_set(timeout_t* t, uint32_t ms)
+{
+    *t = tick + ms;
+}
+
+bool timeout_elapsed(timeout_t* t)
+{
+    return ((int)(*t) - (int)tick) <= 0;
+}
