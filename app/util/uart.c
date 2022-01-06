@@ -57,6 +57,8 @@ static inline bool uart_has_pending()
 
 static inline void do_send_char(const char c)
 {
+    while (ringbuf_full(&tx_rb)) {
+    };
     ringbuf_push(&tx_rb, c);
     LL_USART_EnableIT_TXE(CONSOLE_UART);
 }

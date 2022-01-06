@@ -1,10 +1,13 @@
 #include "app.h"
 
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "coop_sched.h"
+#include "game/output.h"
 #include "gpio.h"
+#include "macros.h"
 #include "util/delay.h"
 #include "util/minicurses.h"
 #include "util/uart.h"
@@ -40,17 +43,21 @@ static struct {
     {"FP", fp_test_fn},
 };
 
+static game_map_t screen = {0};
+
 static void mc_test(void)
 {
     mc_initscr();
     mc_setcursor(false);
+    output_init();
     const char* tmp = "Test";
     mc_color_t fg = mc_color_white;
     mc_color_t bg = mc_color_black;
     mc_attr_t attr = mc_attr_normal;
     bool quit = false;
-    int x = 0, y = 0;
+    coord_t x = 0, y = 0;
     while (!quit) {
+#if 0
         mc_move(x, y);
         mc_set_fg(fg);
         mc_set_bg(bg);
@@ -58,19 +65,26 @@ static void mc_test(void)
         mc_putch(mc_sym_hline);
         mc_putstr(tmp);
         mc_putch(mc_sym_hline);
+#endif
+        screen.block[y][x] = fg;
+        output_render(&screen);
         int c = mc_getch();
         switch (c) {
             case key_up:
                 y--;
+                y = BOUND(y, 0, MAP_SIZE_Y - 1);
                 break;
             case key_down:
                 y++;
+                y = BOUND(y, 0, MAP_SIZE_Y - 1);
                 break;
             case key_left:
                 x--;
+                x = BOUND(x, 0, MAP_SIZE_X - 1);
                 break;
             case key_right:
                 x++;
+                x = BOUND(x, 0, MAP_SIZE_X - 1);
                 break;
             case 'f':
                 fg += 1;
@@ -84,7 +98,8 @@ static void mc_test(void)
                 quit = true;
                 break;
             case 'a':
-                attr ^= mc_attr_blink | mc_attr_italic;
+                memset(&screen, 0, sizeof(screen));
+                //                attr ^= mc_attr_blink | mc_attr_italic;
                 break;
             default:
                 break;
