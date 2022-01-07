@@ -185,10 +185,15 @@ static bool handle_cmd(void)
 
     bool screen_changed = false;
     switch (game_cmd) {
-        case cmd_rotate:
-            piece_rotate(&game.piece);
-            screen_changed = true;
-            break;
+        case cmd_rotate: {
+            // Rotate the piece only if it wouldn't collide
+            piece_t tmp = game.piece;
+            piece_rotate(&tmp);
+            if (!piece_collision(&tmp, game.pos, &game.map)) {
+                game.piece = tmp;
+                screen_changed = true;
+            }
+        } break;
         case cmd_left:
             screen_changed = try_move((pos_t){-1, 0});
             break;
@@ -196,10 +201,16 @@ static bool handle_cmd(void)
             screen_changed = try_move((pos_t){1, 0});
             break;
         case cmd_down:
-            screen_changed = try_move((pos_t){0, 1});
+            // If a piece that can't move down is pressed down, then it's landed
+            if (!try_move((pos_t){0, 1})) {
+                game.fsm = piece_landed;
+            } else {
+                screen_changed = true;
+            }
             break;
         case cmd_drop: {
             pos_t pos_new = game.pos;
+            // Move piece down until it can't move further
             while (!piece_collision(&game.piece, pos_new, &game.map)) {
                 game.pos = pos_new;
                 pos_new = delta_pos((pos_t){0, 1});
