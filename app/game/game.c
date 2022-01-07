@@ -10,7 +10,15 @@
 #include "util/prng.h"
 
 typedef struct game_state {
-    enum { piece_new, piece_falling, piece_landed, pause } fsm;
+    enum {
+        game_wait,
+        game_new,
+        piece_new,
+        piece_falling,
+        piece_landed,
+        pause,
+        game_over,
+    } fsm;
     game_map_t map;
     piece_t piece;
     pos_t pos;
@@ -83,7 +91,7 @@ static void game_init(void)
     mc_initscr();
     mc_setcursor(false);
     output_init();
-    game_reset();
+    game.fsm = game_wait;
 }
 
 static void game_exit(void)
@@ -156,20 +164,52 @@ static void game_render()
     output_render(&render_map);
 }
 
+static void game_welcome_screen()
+{
+    mc_setattr(mc_attr_bold);
+    mc_set_bg(mc_color_default);
+    mc_set_fg(mc_color_default);
+    output_game_msg(MAP_SIZE_Y / 2, "Press any key to start a new game");
+}
+
+static void game_over_screen()
+{
+    mc_setattr(mc_attr_bold);
+    mc_set_bg(mc_color_default);
+    mc_set_fg(mc_color_default);
+    output_game_msg(MAP_SIZE_Y / 2 - 1, "GAME OVER");
+    game_welcome_screen();
+}
+
 void task_fn(void* arg)
 {
     (void)arg;
     game_init();
+    game_welcome_screen();
     while (1) {
         switch (game.fsm) {
+            case game_wait:
+                if (game_cmd != cmd_none) {
+                    game.fsm = game_new;
+                    game_cmd = cmd_none;
+                }
+                break;
+            case game_new:
+                game_reset();
+                // fall through
             case piece_new:
                 game.piece = piece_get_random();
                 game.pos = (pos_t){
                     .x = MAP_SIZE_X / 2 - 1,
                     .y = -piece_get_max_dy(&game.piece) - 1,
                 };
+                if (piece_collision(&game.piece, delta_pos((pos_t){0, 1}), &game.map)) {
+                    game.fsm = game_over;
+                    break;
+                }
                 game.fsm = piece_falling;
                 timeout_set(&game.timeout, game.interval_ms);
+                // fall through
             case piece_falling:
                 if (timeout_elapsed(&game.timeout)) {
                     timeout_set(&game.timeout, game.interval_ms);
@@ -189,6 +229,10 @@ void task_fn(void* arg)
                 break;
             case pause:
                 handle_cmd();
+                break;
+            case game_over:
+                game_over_screen();
+                game.fsm = game_wait;
                 break;
         }
         sched_yield();

@@ -2,10 +2,11 @@
 
 #include <stdint.h>
 
-#define SCREEN_SIZE_X 18
-#define SCREEN_SIZE_Y 30
-#define MAP_SIZE_X (SCREEN_SIZE_X - 2)
-#define MAP_SIZE_Y (SCREEN_SIZE_Y - 2)
+#define CHARS_PER_BLOCK 2
+#define BACKGROUND_COLOR mc_color_default
+
+#define MAP_SIZE_X 18
+#define MAP_SIZE_Y 30
 
 typedef int16_t coord_t;
 
@@ -19,3 +20,4 @@ typedef struct game_map {
 
 void output_init(void);
 void output_render(const game_map_t* map);
+void output_game_msg(coord_t y, const char* str);
