@@ -216,6 +216,7 @@ void mc_clear(void)
 
 void mc_cleartoeol(void)
 {
+    _updateattr();
     _putstr(seq_cleartoeol);
 }
 

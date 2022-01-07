@@ -192,6 +192,7 @@ static bool handle_cmd(void)
         default:
             break;
     }
+    output_key_bindings(game_cmd == cmd_other_key);
     game_cmd = cmd_none;
     return screen_changed;
 }

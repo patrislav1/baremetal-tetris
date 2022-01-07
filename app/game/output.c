@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "input.h"
 #include "macros.h"
 #include "util/minicurses.h"
 
@@ -157,4 +158,40 @@ void output_text_box(const char** msgs)
     // Draw bottom line
     fill_str(tmp, sizeof(tmp), mc_sym_llcorner, mc_sym_hline, max_str_len, mc_sym_lrcorner);
     output_text_msg(y++, tmp);
+}
+
+static void show_key_bindings(void)
+{
+    mc_setattr(mc_attr_normal);
+    mc_set_bg(mc_color_default);
+    mc_set_fg(mc_color_default);
+    const coord_t x = SCREEN_SIZE_X + 2;
+    coord_t y = SCREEN_SIZE_Y - 1 - num_key_bindings;
+    for (size_t i = 0; i < num_key_bindings; i++) {
+        mc_move(x, y);
+        mc_putstr(key_bindings[i].key_name);
+        mc_move(x + 6, y);
+        mc_putstr(key_bindings[i].cmd_name);
+        y++;
+    }
+}
+
+static void hide_key_bindings(void)
+{
+    mc_set_bg(mc_color_default);
+    const coord_t x = SCREEN_SIZE_X + 2;
+    coord_t y = SCREEN_SIZE_Y - 1 - num_key_bindings;
+    for (size_t i = 0; i < num_key_bindings; i++) {
+        mc_move(x, y++);
+        mc_cleartoeol();
+    }
+}
+
+void output_key_bindings(bool show)
+{
+    static bool visible = false;
+    if (show != visible) {
+        (show ? show_key_bindings : hide_key_bindings)();
+        visible = show;
+    }
 }

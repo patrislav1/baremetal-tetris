@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #define CHARS_PER_BLOCK 2
@@ -21,3 +22,4 @@ typedef struct game_map {
 void output_init(void);
 void output_render(const game_map_t* map);
 void output_text_box(const char** msgs);
+void output_key_bindings(bool show);
