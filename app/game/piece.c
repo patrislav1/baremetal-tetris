@@ -23,9 +23,6 @@ static const piece_t piece_templates[] = {
     // #
     // ###
     {mc_color_blue, {{-1, -1}, {-1, 0}, {0, 0}, {1, 0}}},
-    //   #
-    // ###
-    {mc_color_blue, {{-1, 0}, {0, 0}, {1, 0}, {1, -1}}},
 };
 
 piece_t piece_get_random(void)

@@ -1,5 +1,6 @@
 #include "output.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #include "macros.h"
@@ -12,39 +13,76 @@ static struct {
     uint8_t character[SCREEN_SIZE_Y][SCREEN_SIZE_X];
 } screen_map;
 
+static void fill_str(char* buf,
+                     size_t size,
+                     char header,
+                     char fill_char,
+                     size_t fill_n,
+                     char trailer)
+{
+    if (!size--) {  // account for trailing zero
+        return;
+    }
+    if (!size--) {
+        goto finish;
+    }
+    *buf++ = header;
+    while (fill_n--) {
+        if (!size--) {
+            goto finish;
+        }
+        *buf++ = fill_char;
+    }
+    if (!size--) {
+        goto finish;
+    }
+    *buf++ = trailer;
+
+finish:
+    *buf++ = '\0';
+}
+
 void output_init(void)
 {
+    char tmp[SCREEN_SIZE_X + 1];
+
     mc_initscr();
     mc_setcursor(false);
     mc_set_bg(BACKGROUND_COLOR);
+    mc_set_fg(mc_color_white);
+    mc_setattr(mc_attr_normal);
 
+    // Reset screen
     memset(&screen_map, 0, sizeof(screen_map));
 
+    // Top line
     coord_t y = 0;
     mc_move(0, y++);
-    mc_putch(mc_sym_ulcorner);
-    coord_t n = MAP_SIZE_X * CHARS_PER_BLOCK;
-    while (n--) {
-        mc_putch(mc_sym_hline);
-    }
-    mc_putch(mc_sym_urcorner);
-    n = MAP_SIZE_Y;
+    fill_str(tmp,
+             sizeof(tmp),
+             mc_sym_ulcorner,
+             mc_sym_hline,
+             MAP_SIZE_X * CHARS_PER_BLOCK,
+             mc_sym_urcorner);
+    mc_putstr(tmp);
+
+    // Map rows
+    fill_str(tmp, sizeof(tmp), mc_sym_vline, ' ', MAP_SIZE_X * CHARS_PER_BLOCK, mc_sym_vline);
+    size_t n = MAP_SIZE_Y;
     while (n--) {
         mc_move(0, y++);
-        mc_putch(mc_sym_vline);
-        coord_t m = MAP_SIZE_X * CHARS_PER_BLOCK;
-        while (m--) {
-            mc_putch(' ');
-        }
-        mc_putch(mc_sym_vline);
+        mc_putstr(tmp);
     }
+
+    // Bottom line
     mc_move(0, y++);
-    mc_putch(mc_sym_llcorner);
-    n = MAP_SIZE_X * CHARS_PER_BLOCK;
-    while (n--) {
-        mc_putch(mc_sym_hline);
-    }
-    mc_putch(mc_sym_lrcorner);
+    fill_str(tmp,
+             sizeof(tmp),
+             mc_sym_llcorner,
+             mc_sym_hline,
+             MAP_SIZE_X * CHARS_PER_BLOCK,
+             mc_sym_lrcorner);
+    mc_putstr(tmp);
 }
 
 void output_render(const game_map_t* map)
@@ -64,14 +102,59 @@ void output_render(const game_map_t* map)
     }
 }
 
-void output_game_msg(coord_t y, const char* str)
+static void output_text_msg(coord_t y, const char* str)
 {
-    coord_t x = MAX(((int)SCREEN_SIZE_X - (int)strlen(str)) / 2, 0);
-    mc_move(x, y);
+    coord_t x = MAX(((int)SCREEN_SIZE_X - (int)strlen(str)) / 2 - 1, 0);
+    mc_move(x + 1, y + 1);
     mc_putstr(str);
     // Invalidate area, so it gets refreshed in output_render()
-    for (coord_t xc = x; xc <= x + strlen(str) && xc < MAP_SIZE_X; xc++) {
+    for (coord_t xc = x; xc <= x + strlen(str) && xc < SCREEN_SIZE_X; xc++) {
         // Magic value never used in the actual map
         screen_map.character[y][xc] = 0xff;
     }
+}
+
+void output_text_box(const char** msgs)
+{
+    mc_setattr(mc_attr_bold);
+    mc_set_bg(mc_color_black);
+    mc_set_fg(mc_color_white);
+
+    // Determine box dimensions
+    size_t max_str_len = 0;
+    coord_t y = 0;
+    for (const char** msg = msgs; *msg; msg++) {
+        max_str_len = MAX(max_str_len, strlen(*msg));
+        y++;
+    }
+    y = MAX((MAP_SIZE_Y - y) / 2 - 1, 0);
+    max_str_len = MIN(max_str_len, SCREEN_SIZE_X - 4);
+
+    // Draw upper line
+    char tmp[SCREEN_SIZE_X + 1];
+    fill_str(tmp, sizeof(tmp), mc_sym_ulcorner, mc_sym_hline, max_str_len, mc_sym_urcorner);
+    output_text_msg(y++, tmp);
+
+    // Print content
+    for (const char** msg = msgs; *msg; msg++) {
+        const size_t l = strlen(*msg);
+        int pad_left = (max_str_len - l) / 2;
+        int pad_right = max_str_len - l - pad_left;
+        snprintf(tmp,
+                 sizeof(tmp),
+                 "%c%*s%.*s%*s%c",
+                 mc_sym_vline,
+                 pad_left,
+                 "",
+                 max_str_len,
+                 *msg,
+                 pad_right,
+                 "",
+                 mc_sym_vline);
+        output_text_msg(y++, tmp);
+    }
+
+    // Draw bottom line
+    fill_str(tmp, sizeof(tmp), mc_sym_llcorner, mc_sym_hline, max_str_len, mc_sym_lrcorner);
+    output_text_msg(y++, tmp);
 }

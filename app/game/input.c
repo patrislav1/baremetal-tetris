@@ -26,10 +26,15 @@ static void task_fn(void* arg)
 {
     while (1) {
         int c = mc_getch();
-        for (size_t i = 0; i < NUM_ELEMS(key_bindings); i++) {
+        size_t i;
+        for (i = 0; i < NUM_ELEMS(key_bindings); i++) {
             if (c == key_bindings[i].key) {
                 game_send_cmd(key_bindings[i].cmd);
+                break;
             }
+        }
+        if (i == NUM_ELEMS(key_bindings)) {
+            game_send_cmd(cmd_other_key);
         }
     }
 }

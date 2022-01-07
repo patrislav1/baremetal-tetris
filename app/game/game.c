@@ -16,7 +16,7 @@ typedef struct game_state {
         piece_new,
         piece_falling,
         piece_landed,
-        pause,
+        game_paused,
         game_over,
     } fsm;
     game_map_t map;
@@ -33,9 +33,41 @@ static game_cmd_t game_cmd;
 static uint8_t stack[2000];
 static coop_task_t task;
 
-void game_send_cmd(game_cmd_t cmd)
+static void game_render()
 {
-    game_cmd = cmd;
+    static game_map_t render_map;
+    render_map = game.map;
+    piece_draw(&game.piece, game.pos, &render_map);
+    output_render(&render_map);
+}
+
+static void game_welcome_screen()
+{
+    static const char* msgs[] = {
+        "Press any key to start game",
+        NULL,
+    };
+    output_text_box(msgs);
+}
+
+static void game_over_screen()
+{
+    static const char* msgs[] = {
+        "GAME OVER",
+        "Press any key to start game",
+        NULL,
+    };
+    output_text_box(msgs);
+}
+
+static void game_pause_screen()
+{
+    static const char* msgs[] = {
+        "GAME PAUSED",
+        "Press P to resume game",
+        NULL,
+    };
+    output_text_box(msgs);
 }
 
 static void remove_full_rows(game_map_t* map)
@@ -118,7 +150,7 @@ static void handle_cmd(void)
     if (game_cmd == cmd_none) {
         return;
     }
-    if (game.fsm == pause) {
+    if (game.fsm == game_paused) {
         if (game_cmd == cmd_pause) {
             game.fsm = piece_falling;
         }
@@ -148,37 +180,12 @@ static void handle_cmd(void)
             game.fsm = piece_landed;
         } break;
         case cmd_pause:
-            game.fsm = pause;
+            game.fsm = game_paused;
             break;
         default:
             break;
     }
     game_cmd = cmd_none;
-}
-
-static void game_render()
-{
-    static game_map_t render_map;
-    render_map = game.map;
-    piece_draw(&game.piece, game.pos, &render_map);
-    output_render(&render_map);
-}
-
-static void game_welcome_screen()
-{
-    mc_setattr(mc_attr_bold);
-    mc_set_bg(mc_color_default);
-    mc_set_fg(mc_color_default);
-    output_game_msg(MAP_SIZE_Y / 2, "Press any key to start a new game");
-}
-
-static void game_over_screen()
-{
-    mc_setattr(mc_attr_bold);
-    mc_set_bg(mc_color_default);
-    mc_set_fg(mc_color_default);
-    output_game_msg(MAP_SIZE_Y / 2 - 1, "GAME OVER");
-    game_welcome_screen();
 }
 
 void task_fn(void* arg)
@@ -221,13 +228,16 @@ void task_fn(void* arg)
                 }
                 handle_cmd();
                 game_render();
+                if (game.fsm == game_paused) {
+                    game_pause_screen();
+                }
                 break;
             case piece_landed:
                 piece_draw(&game.piece, game.pos, &game.map);
                 remove_full_rows(&game.map);
                 game.fsm = piece_new;
                 break;
-            case pause:
+            case game_paused:
                 handle_cmd();
                 break;
             case game_over:
@@ -238,6 +248,11 @@ void task_fn(void* arg)
         sched_yield();
     }
     game_exit();
+}
+
+void game_send_cmd(game_cmd_t cmd)
+{
+    game_cmd = cmd;
 }
 
 void game_start(void)

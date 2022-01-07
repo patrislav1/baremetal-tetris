@@ -20,4 +20,4 @@ typedef struct game_map {
 
 void output_init(void);
 void output_render(const game_map_t* map);
-void output_game_msg(coord_t y, const char* str);
+void output_text_box(const char** msgs);
