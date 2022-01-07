@@ -19,6 +19,7 @@ static const struct key_binding {
     {key_left, cmd_left},
     {key_right, cmd_right},
     {' ', cmd_drop},
+    {'p', cmd_pause},
 };
 
 static void task_fn(void* arg)

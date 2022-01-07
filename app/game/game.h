@@ -7,6 +7,7 @@ typedef enum game_cmd {
     cmd_rotate,
     cmd_down,
     cmd_drop,
+    cmd_pause,
 } game_cmd_t;
 
 void game_start(void);

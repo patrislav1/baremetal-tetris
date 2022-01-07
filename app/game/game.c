@@ -10,7 +10,7 @@
 #include "util/prng.h"
 
 typedef struct game_state {
-    enum { piece_new, piece_falling, piece_landed } fsm;
+    enum { piece_new, piece_falling, piece_landed, pause } fsm;
     game_map_t map;
     piece_t piece;
     pos_t pos;
@@ -83,6 +83,49 @@ static void try_move(pos_t delta)
     }
 }
 
+static void handle_cmd(void)
+{
+    if (game_cmd == cmd_none) {
+        return;
+    }
+    if (game.fsm == pause) {
+        if (game_cmd == cmd_pause) {
+            game.fsm = piece_falling;
+        }
+        game_cmd = cmd_none;
+        return;
+    }
+
+    switch (game_cmd) {
+        case cmd_rotate:
+            piece_rotate(&game.piece);
+            break;
+        case cmd_left:
+            try_move((pos_t){-1, 0});
+            break;
+        case cmd_right:
+            try_move((pos_t){1, 0});
+            break;
+        case cmd_down:
+            try_move((pos_t){0, 1});
+            break;
+        case cmd_drop: {
+            pos_t pos_new = game.pos;
+            while (!piece_collision(&game.piece, pos_new, &game.map)) {
+                game.pos = pos_new;
+                pos_new = delta_pos((pos_t){0, 1});
+            }
+            game.fsm = piece_landed;
+        } break;
+        case cmd_pause:
+            game.fsm = pause;
+            break;
+        default:
+            break;
+    }
+    game_cmd = cmd_none;
+}
+
 void task_fn(void* arg)
 {
     (void)arg;
@@ -107,31 +150,7 @@ void task_fn(void* arg)
                     }
                     game.pos.y++;
                 }
-                switch (game_cmd) {
-                    case cmd_rotate:
-                        piece_rotate(&game.piece);
-                        break;
-                    case cmd_left:
-                        try_move((pos_t){-1, 0});
-                        break;
-                    case cmd_right:
-                        try_move((pos_t){1, 0});
-                        break;
-                    case cmd_down:
-                        try_move((pos_t){0, 1});
-                        break;
-                    case cmd_drop: {
-                        pos_t pos_new = game.pos;
-                        while (!piece_collision(&game.piece, pos_new, &game.map)) {
-                            game.pos = pos_new;
-                            pos_new = delta_pos((pos_t){0, 1});
-                        }
-                        game.fsm = piece_landed;
-                    } break;
-                    default:
-                        break;
-                }
-                game_cmd = cmd_none;
+                handle_cmd();
                 render_map = game.map;
                 piece_draw(&game.piece, game.pos, &render_map);
                 output_render(&render_map);
@@ -140,6 +159,9 @@ void task_fn(void* arg)
                 piece_draw(&game.piece, game.pos, &game.map);
                 remove_full_rows(&game.map);
                 game.fsm = piece_new;
+                break;
+            case pause:
+                handle_cmd();
                 break;
         }
         sched_yield();
