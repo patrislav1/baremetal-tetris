@@ -32,18 +32,40 @@ void game_send_cmd(game_cmd_t cmd)
 
 static void remove_full_rows(game_map_t* map)
 {
-    for (coord_t y = MAP_SIZE_Y - 1; y >= 0; y--) {
-        bool full = true;
-        for (coord_t x = 0; x < MAP_SIZE_X - 1; x++) {
+    bool full_rows_present = false;
+    for (coord_t y = 0; y < MAP_SIZE_Y; y++) {
+        bool row_full = true;
+        for (coord_t x = 0; x < MAP_SIZE_X; x++) {
             if (map->block[y][x] == 0) {
-                full = false;
+                row_full = false;
                 break;
             }
         }
-        if (full) {
+        if (row_full) {
+            // Flash the row white
             memset(map->block[y], mc_color_white, sizeof(map->block[y]));
         }
+        full_rows_present |= row_full;
     }
+    if (!full_rows_present) {
+        return;
+    }
+    // Flash all full rows
+    output_render(map);
+    delay_ms(100);
+    for (coord_t y = 0; y < MAP_SIZE_Y; y++) {
+        // White color means full row.
+        if (map->block[y][0] == mc_color_white) {
+            if (y > 0) {
+                // Move rows down
+                memmove(map->block[1], map->block[0], y * sizeof(map->block[0]));
+            }
+            // Clear topmost row
+            memset(map->block[0], 0, sizeof(map->block[0]));
+        }
+    }
+    // Draw new map with removed rows
+    output_render(map);
 }
 
 static void game_reset(void)
@@ -126,11 +148,18 @@ static void handle_cmd(void)
     game_cmd = cmd_none;
 }
 
+static void game_render()
+{
+    static game_map_t render_map;
+    render_map = game.map;
+    piece_draw(&game.piece, game.pos, &render_map);
+    output_render(&render_map);
+}
+
 void task_fn(void* arg)
 {
     (void)arg;
     game_init();
-    static game_map_t render_map;
     while (1) {
         switch (game.fsm) {
             case piece_new:
@@ -151,9 +180,7 @@ void task_fn(void* arg)
                     game.pos.y++;
                 }
                 handle_cmd();
-                render_map = game.map;
-                piece_draw(&game.piece, game.pos, &render_map);
-                output_render(&render_map);
+                game_render();
                 break;
             case piece_landed:
                 piece_draw(&game.piece, game.pos, &game.map);

@@ -14,7 +14,7 @@ typedef struct pos {
 } pos_t;
 
 typedef struct game_map {
-    uint8_t block[SCREEN_SIZE_Y][SCREEN_SIZE_X];
+    uint8_t block[MAP_SIZE_Y][MAP_SIZE_X];
 } game_map_t;
 
 void output_init(void);
