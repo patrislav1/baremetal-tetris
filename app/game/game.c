@@ -137,39 +137,45 @@ static pos_t delta_pos(pos_t delta)
     return (pos_t){game.pos.x + delta.x, game.pos.y + delta.y};
 }
 
-static void try_move(pos_t delta)
+// Return true if move successful
+static bool try_move(pos_t delta)
 {
     pos_t pos_new = delta_pos(delta);
     if (!piece_collision(&game.piece, pos_new, &game.map)) {
         game.pos = pos_new;
+        return true;
     }
+    return false;
 }
 
-static void handle_cmd(void)
+// Return true if screen changed
+static bool handle_cmd(void)
 {
     if (game_cmd == cmd_none) {
-        return;
+        return false;
     }
     if (game.fsm == game_paused) {
         if (game_cmd == cmd_pause) {
             game.fsm = piece_falling;
         }
         game_cmd = cmd_none;
-        return;
+        return true;
     }
 
+    bool screen_changed = false;
     switch (game_cmd) {
         case cmd_rotate:
             piece_rotate(&game.piece);
+            screen_changed = true;
             break;
         case cmd_left:
-            try_move((pos_t){-1, 0});
+            screen_changed = try_move((pos_t){-1, 0});
             break;
         case cmd_right:
-            try_move((pos_t){1, 0});
+            screen_changed = try_move((pos_t){1, 0});
             break;
         case cmd_down:
-            try_move((pos_t){0, 1});
+            screen_changed = try_move((pos_t){0, 1});
             break;
         case cmd_drop: {
             pos_t pos_new = game.pos;
@@ -178,6 +184,7 @@ static void handle_cmd(void)
                 pos_new = delta_pos((pos_t){0, 1});
             }
             game.fsm = piece_landed;
+            screen_changed = true;
         } break;
         case cmd_pause:
             game.fsm = game_paused;
@@ -186,6 +193,7 @@ static void handle_cmd(void)
             break;
     }
     game_cmd = cmd_none;
+    return screen_changed;
 }
 
 void task_fn(void* arg)
@@ -211,13 +219,15 @@ void task_fn(void* arg)
                     .y = -piece_get_max_dy(&game.piece) - 1,
                 };
                 if (piece_collision(&game.piece, delta_pos((pos_t){0, 1}), &game.map)) {
+                    piece_draw(&game.piece, game.pos, &game.map);
                     game.fsm = game_over;
                     break;
                 }
                 game.fsm = piece_falling;
-                timeout_set(&game.timeout, game.interval_ms);
+                timeout_set(&game.timeout, 0);
                 // fall through
-            case piece_falling:
+            case piece_falling: {
+                bool screen_changed = false;
                 if (timeout_elapsed(&game.timeout)) {
                     timeout_set(&game.timeout, game.interval_ms);
                     if (piece_collision(&game.piece, delta_pos((pos_t){0, 1}), &game.map)) {
@@ -225,13 +235,16 @@ void task_fn(void* arg)
                         break;
                     }
                     game.pos.y++;
+                    screen_changed = true;
                 }
-                handle_cmd();
-                game_render();
+                screen_changed |= handle_cmd();
+                if (screen_changed) {
+                    game_render();
+                }
                 if (game.fsm == game_paused) {
                     game_pause_screen();
                 }
-                break;
+            } break;
             case piece_landed:
                 piece_draw(&game.piece, game.pos, &game.map);
                 remove_full_rows(&game.map);
