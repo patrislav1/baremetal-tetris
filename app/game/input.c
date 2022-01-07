@@ -3,31 +3,29 @@
 #include <stddef.h>
 
 #include "coop_sched.h"
-#include "game.h"
 #include "macros.h"
 #include "util/minicurses.h"
 
 static uint8_t stack[2000];
 static coop_task_t task;
 
-static const struct key_binding {
-    uint8_t key;
-    game_cmd_t cmd;
-} key_bindings[] = {
-    {key_up, cmd_rotate},
-    {key_down, cmd_down},
-    {key_left, cmd_left},
-    {key_right, cmd_right},
-    {' ', cmd_drop},
-    {'p', cmd_pause},
+const key_binding_t key_bindings[] = {
+    {key_up, "🠉", cmd_rotate, "rotate"},
+    {key_left, "🠈", cmd_left, "move left"},
+    {key_right, "🠊", cmd_right, "move right"},
+    {key_down, "🠋", cmd_down, "move down"},
+    {' ', "space", cmd_drop, "drop"},
+    {'p', "p", cmd_pause, "pause"},
 };
+
+const size_t num_key_bindings = NUM_ELEMS(key_bindings);
 
 static void task_fn(void* arg)
 {
     while (1) {
         int c = mc_getch();
         size_t i;
-        for (i = 0; i < NUM_ELEMS(key_bindings); i++) {
+        for (i = 0; i < num_key_bindings; i++) {
             if (c == key_bindings[i].key) {
                 game_send_cmd(key_bindings[i].cmd);
                 break;
