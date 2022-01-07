@@ -5,6 +5,7 @@
 #include "coop_sched.h"
 #include "game/output.h"
 #include "game/piece.h"
+#include "macros.h"
 #include "util/delay.h"
 #include "util/minicurses.h"
 #include "util/prng.h"
@@ -23,7 +24,9 @@ typedef struct game_state {
     piece_t piece;
     pos_t pos;
     timeout_t timeout;
-    uint16_t interval_ms;
+    unsigned int level;
+    unsigned int level_progress;
+    unsigned int score;
 } game_state_t;
 
 static game_state_t game;
@@ -33,7 +36,9 @@ static game_cmd_t game_cmd;
 static uint8_t stack[2000];
 static coop_task_t task;
 
-static void game_render()
+static uint32_t intervals_per_level[] = {1000, 750, 500, 450, 400, 350, 300, 250, 200, 150, 100};
+
+static void game_render(void)
 {
     static game_map_t render_map;
     render_map = game.map;
@@ -41,7 +46,7 @@ static void game_render()
     output_render(&render_map);
 }
 
-static void game_welcome_screen()
+static void game_welcome_screen(void)
 {
     static const char* msgs[] = {
         "Press any key to start game",
@@ -50,7 +55,7 @@ static void game_welcome_screen()
     output_text_box(msgs);
 }
 
-static void game_over_screen()
+static void game_over_screen(void)
 {
     static const char* msgs[] = {
         "GAME OVER",
@@ -60,7 +65,7 @@ static void game_over_screen()
     output_text_box(msgs);
 }
 
-static void game_pause_screen()
+static void game_pause_screen(void)
 {
     static const char* msgs[] = {
         "GAME PAUSED",
@@ -68,6 +73,17 @@ static void game_pause_screen()
         NULL,
     };
     output_text_box(msgs);
+}
+
+static void inc_score(bool row_cleared)
+{
+    game.score += row_cleared ? game.level * 10 : game.level;
+    game.level_progress += row_cleared ? 5 : 1;
+    if (game.level_progress >= 25) {
+        game.level_progress = 0;
+        game.level = MIN(game.level + 1, NUM_ELEMS(intervals_per_level));
+    }
+    update_score_and_level(game.score, game.level);
 }
 
 static void remove_full_rows(game_map_t* map)
@@ -84,6 +100,8 @@ static void remove_full_rows(game_map_t* map)
         if (row_full) {
             // Flash the row white
             memset(map->block[y], mc_color_white, sizeof(map->block[y]));
+            // Bonus score for full row
+            inc_score(true);
         }
         full_rows_present |= row_full;
     }
@@ -112,10 +130,13 @@ static void game_reset(void)
 {
     game = (game_state_t){
         .fsm = piece_new,
-        .interval_ms = 200,
+        .level = 1,
+        .level_progress = 0,
+        .score = 0,
     };
     game_cmd = cmd_none;
     prng_reseed();
+    update_score_and_level(0, 0);
 }
 
 static void game_init(void)
@@ -230,7 +251,8 @@ void task_fn(void* arg)
             case piece_falling: {
                 bool screen_changed = false;
                 if (timeout_elapsed(&game.timeout)) {
-                    timeout_set(&game.timeout, game.interval_ms);
+                    uint32_t interval_idx = MIN(game.level, NUM_ELEMS(intervals_per_level)) - 1;
+                    timeout_set(&game.timeout, intervals_per_level[interval_idx]);
                     if (piece_collision(&game.piece, delta_pos((pos_t){0, 1}), &game.map)) {
                         game.fsm = piece_landed;
                         break;
@@ -248,6 +270,7 @@ void task_fn(void* arg)
             } break;
             case piece_landed:
                 piece_draw(&game.piece, game.pos, &game.map);
+                inc_score(false);
                 remove_full_rows(&game.map);
                 game.fsm = piece_new;
                 break;

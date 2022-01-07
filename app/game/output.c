@@ -195,3 +195,24 @@ void output_key_bindings(bool show)
         visible = show;
     }
 }
+
+void update_score_and_level(unsigned int score, unsigned int level)
+{
+    mc_setattr(mc_attr_bold);
+    mc_set_bg(mc_color_default);
+    mc_set_fg(mc_color_default);
+    const coord_t x = SCREEN_SIZE_X + 2;
+    coord_t y = 5;
+    mc_move(x, y++);
+    mc_putstr("Score");
+    char tmp[10];
+    snprintf(tmp, sizeof(tmp), "%05u", score);
+    mc_move(x, y++);
+    mc_putstr(tmp);
+    y++;
+    mc_move(x, y++);
+    mc_putstr("Level");
+    snprintf(tmp, sizeof(tmp), "  %02u", level);
+    mc_move(x, y);
+    mc_putstr(tmp);
+}
