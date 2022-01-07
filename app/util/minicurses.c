@@ -105,19 +105,53 @@ static void _move(uint8_t x, uint8_t y)
     printf("\033[%d;%dH", y + 1, x + 1);
 }
 
+static int utf8_ext(uint8_t val)
+{
+    if (val >= 0xc2 && val <= 0xdf) {
+        return 1;
+    }
+    if (val >= 0xe0 && val <= 0xef) {
+        return 2;
+    }
+    if (val >= 0xf0 && val <= 0xf4) {
+        return 3;
+    }
+    return 0;
+}
+
+static void update_g1(bool active)
+{
+    if (ctx.g1_charset_active != active) {
+        _putch(active ? '\016' : '\017');
+        ctx.g1_charset_active = active;
+    }
+}
+
 void mc_putch(unsigned char c)
 {
-    _updateattr();
+    static int unicode_cnt = 0;
+    if (!unicode_cnt) {
+        int ext = utf8_ext(c);
+        if (ext) {
+            // Print N characters raw & increment X only once
+            unicode_cnt = ext;
+            goto do_putch;
+        }
+    }
+    if (unicode_cnt > 0) {
+        _putch(c);
+        unicode_cnt--;
+        return;
+    }
 
     bool use_g1 = (c >= 0x80 && c <= 0x9F);
-    if (ctx.g1_charset_active != use_g1) {
-        _putch(use_g1 ? '\016' : '\017');
-        ctx.g1_charset_active = use_g1;
-    }
+    update_g1(use_g1);
     if (use_g1) {
         c -= 0x20;
     }
 
+do_putch:
+    _updateattr();
     _putch(c);
     ctx.cursor_x++;
 }
