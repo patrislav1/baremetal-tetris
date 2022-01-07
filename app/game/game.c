@@ -24,6 +24,7 @@ typedef struct game_state {
     piece_t piece;
     pos_t pos;
     timeout_t timeout;
+    uint32_t piece_launched_at_ms;
     unsigned int level;
     unsigned int level_progress;
     unsigned int score;
@@ -77,7 +78,14 @@ static void game_pause_screen(void)
 
 static void inc_score(bool row_cleared)
 {
-    game.score += row_cleared ? game.level * 10 : game.level;
+    if (!row_cleared) {
+        // Give score proportional to speed of the piece
+        uint32_t piece_distance = game.pos.y;
+        uint32_t ms_elapsed = get_ms() - game.piece_launched_at_ms;
+        game.score += MIN(piece_distance * 1000 / ms_elapsed, 1);
+    } else {
+        game.score += game.level * 25;
+    }
     game.level_progress += row_cleared ? 5 : 1;
     if (game.level_progress >= 25) {
         game.level_progress = 0;
@@ -257,6 +265,7 @@ void task_fn(void* arg)
                     break;
                 }
                 game.fsm = piece_falling;
+                game.piece_launched_at_ms = get_ms();
                 timeout_set(&game.timeout, 0);
                 // fall through
             case piece_falling: {
