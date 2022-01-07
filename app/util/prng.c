@@ -3,6 +3,8 @@
 #include <stdint.h>
 
 #include "macros.h"
+#include "stm32l4xx.h"
+#include "util/delay.h"
 
 #define N 624
 #define M 397
@@ -54,4 +56,12 @@ uint32_t prng_next()
     e ^= (e >> 18);
 
     return e;
+}
+
+void prng_reseed(void)
+{
+    prng_seed(get_ms() ^ SysTick->VAL);
+    for (int i = 0; i < SysTick->VAL % 2000; i++) {
+        prng_next();
+    }
 }
