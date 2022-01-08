@@ -10,10 +10,10 @@ static uint8_t stack[2000];
 static coop_task_t task;
 
 const key_binding_t key_bindings[] = {
-    {key_up, "🠉", cmd_rotate, "rotate"},
-    {key_left, "🠈", cmd_left, "move left"},
-    {key_right, "🠊", cmd_right, "move right"},
-    {key_down, "🠋", cmd_down, "move down"},
+    {key_up, "↑", cmd_rotate, "rotate"},
+    {key_left, "←", cmd_left, "move left"},
+    {key_right, "→", cmd_right, "move right"},
+    {key_down, "↓", cmd_down, "move down"},
     {' ', "space", cmd_drop, "drop"},
     {'p', "p", cmd_pause, "pause"},
 };
