@@ -19,6 +19,7 @@ typedef struct game_state {
         piece_landed,
         game_paused,
         game_over,
+        game_quit
     } fsm;
     game_map_t map;
     piece_t piece;
@@ -183,6 +184,10 @@ static bool handle_cmd(void)
     if (game_cmd == cmd_none) {
         return false;
     }
+    if (game_cmd == cmd_quit) {
+        game.fsm = game_quit;
+        return false;
+    }
     if (game.fsm == game_paused) {
         if (game_cmd == cmd_pause) {
             game.fsm = piece_falling;
@@ -242,7 +247,7 @@ void task_fn(void* arg)
     (void)arg;
     game_init();
     game_welcome_screen();
-    while (1) {
+    while (game.fsm != game_quit) {
         switch (game.fsm) {
             case game_wait:
                 if (game_cmd != cmd_none) {
@@ -301,10 +306,13 @@ void task_fn(void* arg)
                 game_over_screen();
                 game.fsm = game_wait;
                 break;
+            default:
+                break;
         }
         sched_yield();
     }
     game_exit();
+    printf("\r\nBye.\r\n");
 }
 
 void game_send_cmd(game_cmd_t cmd)

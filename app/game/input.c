@@ -16,6 +16,7 @@ const key_binding_t key_bindings[] = {
     {key_down, "↓", cmd_down, "move down"},
     {' ', "space", cmd_drop, "drop"},
     {'p', "p", cmd_pause, "pause"},
+    {'q', "q", cmd_quit, "quit"},
 };
 
 const size_t num_key_bindings = NUM_ELEMS(key_bindings);
