@@ -7,13 +7,14 @@
 
 // https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797
 // https://man7.org/linux/man-pages/man4/console_codes.4.html
+// https://www.vt100.net/docs/vt100-ug/chapter3.html
 
 // clang-format off
 static const char
-  *seq_clear = "\033[2J",         // clear screen
-  *seq_cleartoeol    = "\033[K",  // clear to end of line
-  *seq_deleteline    = "\033[M",  // delete line
-  *seq_load_g1       = "\033)0";  // load G1 character set
+  *seq_clear      = "\033[2J", // Clear screen
+  *seq_cleartoeol = "\033[K",  // Clear to end of line
+  *seq_deleteline = "\033[M",  // Delete line
+  *seq_load_g1    = "\033)0";  // Load G1 character set
 // clang-format on
 
 static const char* key_seq[] = {
@@ -68,7 +69,6 @@ static void _updateattr(void)
         // Set or reset attributes to match the requested ones
         for (int i = 1; i <= 7; i++) {
             if (req->attr & (1 << i)) {
-                // set the attribute
                 len += snprintf(tmp + len,
                                 sizeof(tmp) - len,
                                 "%s%d",
@@ -79,7 +79,7 @@ static void _updateattr(void)
         }
         curr->attr = req->attr;
         if (!attr_set) {
-            // reset all modes; must set colors again
+            // Reset all modes; must set colors again
             len += snprintf(tmp + len, sizeof(tmp) - len, "0");
             force_colors = true;
         }
@@ -165,7 +165,7 @@ void mc_putstr(const char* str)
 
 void mc_initscr(void)
 {
-    setvbuf(stdout, NULL, _IONBF, 0);  // turn off buffering on stdout
+    setvbuf(stdout, NULL, _IONBF, 0);  // Turn off buffering on stdout
     _putstr(seq_load_g1);
     _putstr("\033[m");
     ctx.display_current = (struct display_params){

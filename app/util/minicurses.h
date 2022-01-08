@@ -91,6 +91,7 @@ void mc_clear(void);              // clear screen
 void mc_cleartoeol(void);         // clear from current column to end of row
 void mc_deleterow(void);          // delete row at current cursor position
 void mc_setcursor(bool visible);  // set cursor to: 0=invisible 1=normal 2=very visible
-int mc_getch(void);
-void mc_putch(unsigned char c);
-void mc_putstr(const char* str);
+
+int mc_getch(void);               // get character or key code (mc_keycodes_t)
+void mc_putch(unsigned char c);   // send character or symbol (mc_symbols_t)
+void mc_putstr(const char* str);  // send string composed of characters or symbols
