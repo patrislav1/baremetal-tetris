@@ -1,0 +1,1 @@
+[{ "name": "arm-gcc from CMake Toolchain", "toolchainFile": "${workspaceRoot}/cubemx.cmake/arm-gcc.cmake" }]
