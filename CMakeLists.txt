@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 
 set(CMX_IOC "${CMAKE_CURRENT_LIST_DIR}/coop_test.ioc")
 
-include(cmake/cubemx.cmake)
+include(cubemx.cmake/cubemx.cmake)
 
 project(${CMX_PROJ})
 

@@ -1,3 +1,6 @@
 [submodule "coop-sched"]
 	path = coop-sched
 	url = git@github.com:patrislav1/coop-sched.git
+[submodule "cubemx.cmake"]
+	path = cubemx.cmake
+	url = git@github.com:patrislav1/cubemx.cmake.git
