@@ -1,5 +1,6 @@
 #include "game.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #include "coop_sched.h"
