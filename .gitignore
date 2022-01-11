@@ -1,3 +1,4 @@
 /build
-/.mxproject
 /.vscode
+.mxproject
+Makefile
