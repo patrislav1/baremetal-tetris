@@ -2,8 +2,8 @@
 
 #include <stdint.h>
 
+#include "board.h"
 #include "macros.h"
-#include "stm32l4xx.h"
 #include "util/delay.h"
 
 #define N 624

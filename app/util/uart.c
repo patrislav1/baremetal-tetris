@@ -2,10 +2,9 @@
 
 #include <stddef.h>
 
+#include "board.h"
 #include "ringbuf.h"
 #include "usart.h"
-
-#define CONSOLE_UART USART2
 
 static char rx_buf[512];
 static char tx_buf[512];
@@ -27,7 +26,7 @@ void panic_print(const char* str)
     }
 }
 
-void USART2_IRQHandler(void)
+void CONSOLE_IRQ_HANDLER(void)
 {
     USART_TypeDef* const uart = CONSOLE_UART;
     if (LL_USART_IsEnabledIT_RXNE(uart) && LL_USART_IsActiveFlag_RXNE(uart)) {
