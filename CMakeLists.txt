@@ -37,6 +37,21 @@ if(NOT BOARD_DIR)
     message(FATAL_ERROR "Unknown board ${BOARD}")
 endif()
 
+if("${BOARD}" STREQUAL "BLUEPILL")
+    # Add USB CDC stuff
+    target_include_directories(baremetal-tetris PRIVATE
+        "${BOARD_DIR}/USB_DEVICE/App"
+        "${BOARD_DIR}/USB_DEVICE/Target"
+        "${BOARD_DIR}/Middlewares/ST/STM32_USB_Device_Library/Core/Inc"
+        "${BOARD_DIR}/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc"
+    )
+    file(GLOB_RECURSE USB_CDC_SRC
+        "${BOARD_DIR}/USB_DEVICE/*.c"
+        "${BOARD_DIR}/Middlewares/*.c"
+    )
+    target_sources(baremetal-tetris PRIVATE ${USB_CDC_SRC})
+endif()
+
 cubemx_target(
     baremetal-tetris
     IOC "${BOARD_IOC}"
