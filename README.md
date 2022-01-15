@@ -6,4 +6,9 @@ This is a test / demo for [coop-sched](https://github.com/patrislav1/coop-sched)
 
 ## Targets
 
-Currently this only works on the STM32 NUCLEO-L433RC-P. More targets will be added in the future.
+Supported targets:
+
+* STM32 NUCLEO-L433RC-P
+* Blue Pill
+
+More targets will be added in the future.
