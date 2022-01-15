@@ -5,6 +5,7 @@
 #include "coop_sched.h"
 #include "game/game.h"
 #include "game/input.h"
+#include "gpio.h"
 #include "util/delay.h"
 #include "util/uart.h"
 
@@ -17,7 +18,11 @@ void app_main(void)
     input_start();
     game_start();
 
+    int k = 0;
     while (1) {
-        sched_yield();
+        bool led_on = (k == 0 || k == 2);
+        (led_on ? LL_GPIO_ResetOutputPin : LL_GPIO_SetOutputPin)(LED_GPIO_Port, LED_Pin);
+        k = (k + 1) % 10;
+        delay_ms(100);
     }
 }
