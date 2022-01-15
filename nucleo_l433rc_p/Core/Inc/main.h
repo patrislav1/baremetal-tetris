@@ -74,8 +74,6 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define B1_Pin LL_GPIO_PIN_13
 #define B1_GPIO_Port GPIOC
-#define MCO_Pin LL_GPIO_PIN_0
-#define MCO_GPIO_Port GPIOH
 #define USART_TX_Pin LL_GPIO_PIN_2
 #define USART_TX_GPIO_Port GPIOA
 #define USART_RX_Pin LL_GPIO_PIN_3
@@ -88,14 +86,12 @@ void Error_Handler(void);
 #define SMPS_PG_GPIO_Port GPIOA
 #define SMPS_SW_Pin LL_GPIO_PIN_7
 #define SMPS_SW_GPIO_Port GPIOA
-#define LD4_Pin LL_GPIO_PIN_13
-#define LD4_GPIO_Port GPIOB
+#define LED_Pin LL_GPIO_PIN_13
+#define LED_GPIO_Port GPIOB
 #define TMS_Pin LL_GPIO_PIN_13
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin LL_GPIO_PIN_14
 #define TCK_GPIO_Port GPIOA
-#define SWO_Pin LL_GPIO_PIN_3
-#define SWO_GPIO_Port GPIOB
 #ifndef NVIC_PRIORITYGROUP_0
 #define NVIC_PRIORITYGROUP_0         ((uint32_t)0x00000007) /*!< 0 bit  for pre-emption priority,
                                                                  4 bits for subpriority */

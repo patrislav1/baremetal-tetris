@@ -21,6 +21,9 @@ void app_main(void)
     int k = 0;
     while (1) {
         bool led_on = (k == 0 || k == 2);
+#ifdef LED_INVERTED
+        led_on = !led_on;
+#endif
         (led_on ? LL_GPIO_ResetOutputPin : LL_GPIO_SetOutputPin)(LED_GPIO_Port, LED_Pin);
         k = (k + 1) % 10;
         delay_ms(100);

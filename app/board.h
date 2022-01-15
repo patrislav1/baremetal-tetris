@@ -5,6 +5,7 @@
 #include "stm32l433xx.h"
 #define CONSOLE_UART USART2
 #define CONSOLE_IRQ_HANDLER USART2_IRQHandler
+#define LED_INVERTED
 
 #elif defined STM32F103xB
 
