@@ -9,7 +9,6 @@
 #elif defined STM32F103xB
 
 #include "stm32f103xb.h"
-#define CONSOLE_UART USART1
-#define CONSOLE_IRQ_HANDLER USART1_IRQHandler
+#define CONSOLE_USB
 
 #endif

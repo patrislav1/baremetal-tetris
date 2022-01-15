@@ -13,6 +13,7 @@
 
 typedef struct game_state {
     enum {
+        game_wait_connect,
         game_wait,
         game_new,
         piece_new,
@@ -35,9 +36,6 @@ typedef struct game_state {
 static game_state_t game;
 
 static game_cmd_t game_cmd;
-
-static uint8_t stack[2000];
-static coop_task_t task;
 
 static uint32_t intervals_per_level[] = {1000, 750, 500, 450, 400, 350, 300, 250, 200, 150, 100};
 
@@ -149,12 +147,12 @@ static void game_reset(void)
     update_score_and_level(0, 0);
 }
 
-static void game_init(void)
+static void game_initscr(void)
 {
     mc_initscr();
     mc_setcursor(false);
     output_init();
-    game.fsm = game_wait;
+    timeout_set(&game.timeout, 1000);
 }
 
 static void game_exit(void)
@@ -243,13 +241,19 @@ static bool handle_cmd(void)
     return screen_changed;
 }
 
-void task_fn(void* arg)
+void game_task_fn(void* arg)
 {
     (void)arg;
-    game_init();
-    game_welcome_screen();
+    timeout_set(&game.timeout, 0);
+
     while (game.fsm != game_quit) {
         switch (game.fsm) {
+            case game_wait_connect:
+                if (timeout_elapsed(&game.timeout)) {
+                    game_initscr();
+                    game_welcome_screen();
+                }
+                // fall through
             case game_wait:
                 if (game_cmd != cmd_none) {
                     game.fsm = game_new;
@@ -323,5 +327,7 @@ void game_send_cmd(game_cmd_t cmd)
 
 void game_start(void)
 {
-    sched_create_task(&task, &task_fn, NULL, stack, sizeof(stack));
+    static uint8_t stack[2000];
+    static coop_task_t task;
+    sched_create_task(&task, &game_task_fn, NULL, stack, sizeof(stack));
 }
