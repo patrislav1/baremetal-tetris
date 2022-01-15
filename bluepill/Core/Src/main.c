@@ -23,6 +23,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "usb.h" // not included by CubeMX?
 #include "app.h"
 
 /* USER CODE END Includes */
@@ -71,19 +72,7 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-
-  LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_AFIO);
-  LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_PWR);
-
-  NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
-
-  /* System interrupt init*/
-  /* SysTick_IRQn interrupt configuration */
-  NVIC_SetPriority(SysTick_IRQn, NVIC_EncodePriority(NVIC_GetPriorityGrouping(),15, 0));
-
-  /** NOJTAG: JTAG-DP Disabled and SW-DP Enabled
-  */
-  LL_GPIO_AF_Remap_SWJ_NOJTAG();
+  HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -99,6 +88,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART1_UART_Init();
+  MX_USB_PCD_Init();
   /* USER CODE BEGIN 2 */
   app_main();
 
@@ -121,30 +111,43 @@ int main(void)
   */
 void SystemClock_Config(void)
 {
-  LL_FLASH_SetLatency(LL_FLASH_LATENCY_0);
-  while(LL_FLASH_GetLatency()!= LL_FLASH_LATENCY_0)
+  LL_FLASH_SetLatency(LL_FLASH_LATENCY_1);
+  while(LL_FLASH_GetLatency()!= LL_FLASH_LATENCY_1)
   {
   }
-  LL_RCC_HSI_SetCalibTrimming(16);
-  LL_RCC_HSI_Enable();
+  LL_RCC_HSE_Enable();
 
-   /* Wait till HSI is ready */
-  while(LL_RCC_HSI_IsReady() != 1)
+   /* Wait till HSE is ready */
+  while(LL_RCC_HSE_IsReady() != 1)
+  {
+
+  }
+  LL_RCC_PLL_ConfigDomain_SYS(LL_RCC_PLLSOURCE_HSE_DIV_1, LL_RCC_PLL_MUL_6);
+  LL_RCC_PLL_Enable();
+
+   /* Wait till PLL is ready */
+  while(LL_RCC_PLL_IsReady() != 1)
   {
 
   }
   LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
-  LL_RCC_SetAPB1Prescaler(LL_RCC_APB1_DIV_1);
+  LL_RCC_SetAPB1Prescaler(LL_RCC_APB1_DIV_2);
   LL_RCC_SetAPB2Prescaler(LL_RCC_APB2_DIV_1);
-  LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
+  LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_PLL);
 
    /* Wait till System clock is ready */
-  while(LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_HSI)
+  while(LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_PLL)
   {
 
   }
-  LL_Init1msTick(8000000);
-  LL_SetSystemCoreClock(8000000);
+  LL_SetSystemCoreClock(48000000);
+
+   /* Update the time base */
+  if (HAL_InitTick (TICK_INT_PRIORITY) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL);
 }
 
 /* USER CODE BEGIN 4 */
