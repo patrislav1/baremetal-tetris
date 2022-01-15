@@ -4,7 +4,10 @@
 
 #include "board.h"
 #include "ringbuf.h"
+
+#ifdef CONSOLE_UART
 #include "usart.h"
+#endif
 
 #ifdef CONSOLE_USB
 #include "coop_sched.h"
