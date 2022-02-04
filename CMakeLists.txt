@@ -19,6 +19,7 @@ message("Board selected: ${BOARD}")
 
 set(L433_DIR "${CMAKE_CURRENT_LIST_DIR}/nucleo_l433rc_p")
 set(L433_IOC "${L433_DIR}/nucleo_l433rc_p.ioc")
+set(L433_CONSOLE "USART2")
 
 set(BLUEPILL_DIR "${CMAKE_CURRENT_LIST_DIR}/bluepill")
 set(BLUEPILL_IOC "${BLUEPILL_DIR}/bluepill.ioc")
@@ -26,18 +27,26 @@ set(BLUEPILL_IOC "${BLUEPILL_DIR}/bluepill.ioc")
 set(BLUEPILL_STARTUP "${BLUEPILL_DIR}/startup_stm32f103xb.s")
 set(BLUEPILL_CDEF STM32F103xB)
 set(BLUEPILL_PYOCD_OPT "-tstm32f103c8")
+set(BLUEPILL_CONSOLE "USB")
+
+set(F401_DIR "${CMAKE_CURRENT_LIST_DIR}/blackpill_f401")
+set(F401_IOC "${F401_DIR}/blackpill_f401.ioc")
+set(F401_CDEF STM32F401xE)
+set(F401_STARTUP "${F401_DIR}/startup_stm32f401xe.s")
+set(F401_CONSOLE "USB")
 
 set(BOARD_DIR ${${BOARD}_DIR})
 set(BOARD_IOC ${${BOARD}_IOC})
 set(BOARD_STARTUP ${${BOARD}_STARTUP})
 set(BOARD_CDEF ${${BOARD}_CDEF})
+set(BOARD_CONSOLE ${${BOARD}_CONSOLE})
 set(PYOCD_OPT ${${BOARD}_PYOCD_OPT})
 
 if(NOT BOARD_DIR)
     message(FATAL_ERROR "Unknown board ${BOARD}")
 endif()
 
-if("${BOARD}" STREQUAL "BLUEPILL")
+if("${BOARD_CONSOLE}" STREQUAL "USB")
     # Add USB CDC stuff
     target_include_directories(baremetal-tetris PRIVATE
         "${BOARD_DIR}/USB_DEVICE/App"
@@ -50,6 +59,12 @@ if("${BOARD}" STREQUAL "BLUEPILL")
         "${BOARD_DIR}/Middlewares/*.c"
     )
     target_sources(baremetal-tetris PRIVATE ${USB_CDC_SRC})
+    list(APPEND BOARD_CDEF CONSOLE_USB)
+else()
+    list(APPEND BOARD_CDEF
+        -DCONSOLE_UART=${BOARD_CONSOLE}
+        -DCONSOLE_IRQ_HANDLER=${BOARD_CONSOLE}_IRQHandler
+    )
 endif()
 
 cubemx_target(
