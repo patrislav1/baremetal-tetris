@@ -10,8 +10,8 @@
 
 #include "stm32f103xb.h"
 
-#elif defined STM32F401xE
+#elif defined STM32F401xC
 
-#include "stm32f401xe.h"
+#include "stm32f401xc.h"
 
 #endif

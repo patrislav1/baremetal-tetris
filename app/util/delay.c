@@ -5,9 +5,14 @@
 
 static volatile uint32_t tick = 0;
 
+extern void HAL_IncTick(void);
+
 void SysTick_Handler(void)
 {
     tick++;
+#ifdef STM32F401xC
+    HAL_IncTick();
+#endif
 }
 
 void delay_init(void)

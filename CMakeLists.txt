@@ -31,8 +31,8 @@ set(BLUEPILL_CONSOLE "USB")
 
 set(F401_DIR "${CMAKE_CURRENT_LIST_DIR}/blackpill_f401")
 set(F401_IOC "${F401_DIR}/blackpill_f401.ioc")
-set(F401_CDEF STM32F401xE)
-set(F401_STARTUP "${F401_DIR}/startup_stm32f401xe.s")
+set(F401_CDEF STM32F401xC)
+set(F401_STARTUP "${F401_DIR}/startup_stm32f401xc.s")
 set(F401_CONSOLE "USB")
 
 set(BOARD_DIR ${${BOARD}_DIR})
