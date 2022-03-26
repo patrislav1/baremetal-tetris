@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
+set(CMAKE_TOOLCHAIN_FILE cubemx.cmake/arm-gcc.cmake)
 include(cubemx.cmake/cubemx.cmake)
 
 project(baremetal-tetris)
